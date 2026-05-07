@@ -109,7 +109,7 @@ public class MainServlet extends HttpServlet {
 						//
 						final Map<?, ?> parameterMap = getParameterMap(request);
 						//
-						if (allMatch(Stream.of("x", "y"), x -> containsKey(parameterMap, x))) {
+						if (allMatch(Stream.of("w", "h"), x -> containsKey(parameterMap, x))) {
 							//
 							bufferedImage = bufferedImage.getSubimage(NumberUtils.toInt(getParameter(request, "x")),
 									NumberUtils.toInt(getParameter(request, "y")),
