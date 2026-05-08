@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Predicates;
@@ -37,7 +38,7 @@ import io.github.toolfactory.narcissus.Narcissus;
 class MainTest {
 
 	private static Method METHOD_FOR_NAME, METHOD_CONAINS_KEY, METHOD_TEST_AND_APPLY, METHOD_GET_VALUE, METHOD_CAST,
-			METHOD_TO_MAP = null;
+			METHOD_TO_MAP, METHOD_TEST_AND_RUN = null;
 
 	@BeforeAll
 	static void beforeAll() throws NoSuchMethodException {
@@ -56,6 +57,8 @@ class MainTest {
 		(METHOD_CAST = clz.getDeclaredMethod("cast", Class.class, Object.class)).setAccessible(true);
 		//
 		(METHOD_TO_MAP = clz.getDeclaredMethod("toMap", String[].class)).setAccessible(true);
+		//
+		(METHOD_TEST_AND_RUN = clz.getDeclaredMethod("testAndRun", Boolean.TYPE, Runnable.class)).setAccessible(true);
 		//
 	}
 
@@ -113,6 +116,15 @@ class MainTest {
 
 	}
 
+	private IH ih = null;
+
+	@BeforeEach
+	void beforeEach() {
+		//
+		ih = new IH();
+		//
+	}
+
 	@Test
 	void testNull() throws Throwable {
 		//
@@ -123,6 +135,8 @@ class MainTest {
 		Collection<Object> collection = null;
 		//
 		Class<?>[] parameterTypes = null;
+		//
+		Class<?> parameterType = null;
 		//
 		Object result = null;
 		//
@@ -141,9 +155,13 @@ class MainTest {
 			//
 			for (int j = 0; j < parameterTypes.length; j++) {
 				//
-				if (Objects.equals(ArrayUtils.get(parameterTypes, j), Integer.TYPE)) {
+				if (Objects.equals(parameterType = ArrayUtils.get(parameterTypes, j), Integer.TYPE)) {
 					//
 					add(collection, Integer.valueOf(0));
+					//
+				} else if (Objects.equals(parameterType, Boolean.TYPE)) {
+					//
+					add(collection, Boolean.FALSE);
 					//
 				} else {
 					//
@@ -195,8 +213,6 @@ class MainTest {
 		//
 		String name, toString = null;
 		//
-		IH ih = null;
-		//
 		for (int i = 0; ms != null && i < ms.length; i++) {
 			//
 			if ((m = ArrayUtils.get(ms, i)) == null || m.isSynthetic()
@@ -232,6 +248,10 @@ class MainTest {
 				} else if (Objects.equals(parameterType, FieldOrMethod.class)) {
 					//
 					add(collection, Narcissus.allocateInstance(Field.class));
+					//
+				} else if (Objects.equals(parameterType, Boolean.TYPE)) {
+					//
+					add(collection, Boolean.FALSE);
 					//
 				} else if (isArray(parameterType)) {
 					//
@@ -422,6 +442,8 @@ class MainTest {
 		//
 		Assertions.assertEquals(Collections.singletonMap(" ", "="), toMap(" =="));
 		//
+		Assertions.assertThrows(IllegalArgumentException.class, () -> toMap("=", "="));
+		//
 	}
 
 	private static Map<String, String> toMap(final String... ss) throws Throwable {
@@ -470,6 +492,16 @@ class MainTest {
 			//
 		} // try
 			//
+	}
+
+	@Test
+	void testTestAndRun() {
+		//
+		Assertions.assertDoesNotThrow(() -> invoke(METHOD_TEST_AND_RUN, null, Boolean.TRUE, null));
+		//
+		Assertions.assertDoesNotThrow(
+				() -> invoke(METHOD_TEST_AND_RUN, null, Boolean.TRUE, Reflection.newProxy(Runnable.class, ih)));
+		//
 	}
 
 }

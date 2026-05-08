@@ -91,28 +91,45 @@ public class Main {
 		//
 		Map<String, String> map = null;
 		//
+		String key = null;
+		//
+		final Runnable runnable = () -> {
+			//
+			throw new IllegalArgumentException();
+			//
+		};
+		//
 		for (int i = 0; i < length(ss); i++) {
 			//
 			if (Objects.equals(s = ArrayUtils.get(ss, i), "=")) {
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), "", "");
+				testAndRun(containsKey(map, key = ""), runnable);
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, "");
 				//
 			} else if (s != null && s.length() == 2 && s.charAt(0) == '=') {
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), "", s.substring(1, s.length()));
+				testAndRun(containsKey(map, key = ""), runnable);
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, s.substring(1, s.length()));
 				//
 			} else if (s != null && s.length() == 2 && s.charAt(s.length() - 1) == '=') {
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), s.substring(0, s.length() - 1), "");
+				testAndRun(containsKey(map, key = s.substring(0, s.length() - 1)), runnable);
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, "");
 				//
 			} else if (s != null && s.indexOf('=') >= 0 && s.indexOf('=') == s.lastIndexOf('=')) {
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), StringUtils.substringBefore(s, '='),
-						StringUtils.substringAfter(s, '='));
+				testAndRun(containsKey(map, key = StringUtils.substringBefore(s, '=')), runnable);
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, StringUtils.substringAfter(s, '='));
 				//
 			} else if (s != null && s.length() > 2 && s.indexOf('=') != s.lastIndexOf('=')) {
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), StringUtils.substring(s, 0, s.indexOf('=')),
+				testAndRun(containsKey(map, key = StringUtils.substring(s, 0, s.indexOf('='))), runnable);
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key,
 						StringUtils.substring(s, s.indexOf('=') + 1));
 				//
 			} // if
@@ -121,6 +138,12 @@ public class Main {
 			//
 		return map;
 		//
+	}
+
+	private static void testAndRun(final boolean condition, final Runnable runnable) {
+		if (condition && runnable != null) {
+			runnable.run();
+		}
 	}
 
 	private static <K, V> void put(final Map<K, V> instance, final K key, final V value) {
