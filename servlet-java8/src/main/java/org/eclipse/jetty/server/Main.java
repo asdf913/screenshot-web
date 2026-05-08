@@ -103,34 +103,36 @@ public class Main {
 			//
 			if (Objects.equals(s = ArrayUtils.get(ss, i), "=")) {
 				//
-				testAndRun(containsKey(map, key = ""), runnable);
+				testAndRun(containsKey(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key = ""), runnable);
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, "");
+				put(map, key, "");
 				//
 			} else if (s != null && s.length() == 2 && s.charAt(0) == '=') {
 				//
-				testAndRun(containsKey(map, key = ""), runnable);
+				testAndRun(containsKey(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key = ""), runnable);
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, s.substring(1, s.length()));
+				put(map, key, s.substring(1, s.length()));
 				//
 			} else if (s != null && s.length() == 2 && s.charAt(s.length() - 1) == '=') {
 				//
-				testAndRun(containsKey(map, key = s.substring(0, s.length() - 1)), runnable);
+				testAndRun(containsKey(map = ObjectUtils.getIfNull(map, LinkedHashMap::new),
+						key = s.substring(0, s.length() - 1)), runnable);
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, "");
+				put(map, key, "");
 				//
 			} else if (s != null && s.indexOf('=') >= 0 && s.indexOf('=') == s.lastIndexOf('=')) {
 				//
-				testAndRun(containsKey(map, key = StringUtils.substringBefore(s, '=')), runnable);
+				testAndRun(containsKey(map = ObjectUtils.getIfNull(map, LinkedHashMap::new),
+						key = StringUtils.substringBefore(s, '=')), runnable);
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key, StringUtils.substringAfter(s, '='));
+				put(map, key, StringUtils.substringAfter(s, '='));
 				//
 			} else if (s != null && s.length() > 2 && s.indexOf('=') != s.lastIndexOf('=')) {
 				//
-				testAndRun(containsKey(map, key = StringUtils.substring(s, 0, s.indexOf('='))), runnable);
+				testAndRun(containsKey(map = ObjectUtils.getIfNull(map, LinkedHashMap::new),
+						key = StringUtils.substring(s, 0, s.indexOf('='))), runnable);
 				//
-				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), key,
-						StringUtils.substring(s, s.indexOf('=') + 1));
+				put(map, key, StringUtils.substring(s, s.indexOf('=') + 1));
 				//
 			} // if
 				//
