@@ -3,10 +3,14 @@ package org.eclipse.jetty.server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.nio.file.FileSystems;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -25,6 +29,7 @@ import org.apache.bcel.generic.Instruction;
 import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.LDC;
 import org.apache.bcel.generic.MethodGen;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +38,15 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+import com.sun.jna.Memory;
+import com.sun.jna.platform.win32.IPHlpAPI;
+import com.sun.jna.platform.win32.IPHlpAPI.MIB_TCPROW_OWNER_PID;
+import com.sun.jna.platform.win32.IPHlpAPI.MIB_TCPTABLE_OWNER_PID;
+import com.sun.jna.platform.win32.WinError;
+import com.sun.jna.ptr.IntByReference;
 
 public class Main {
 
@@ -70,6 +84,33 @@ public class Main {
 				//
 		} // if
 			//
+		final Multimap<Integer, Integer> multimap = getProcessIdPortMultimap();
+		//
+		final Iterable<Integer> pids = keySet(multimap);
+		//
+		if (pids != null && pids.iterator() != null) {
+			//
+			Collection<Integer> pidList = null;
+			//
+			for (final Integer pid : pids) {
+				//
+				if (IterableUtils.contains(get(multimap, pid), port)) {
+					//
+					add(pidList = ObjectUtils.getIfNull(pidList, ArrayList::new), pid);
+					//
+				} // if
+					//
+			} // for
+				//
+			if (IterableUtils.size(pidList) == 1 && !isTestMode()) {
+				//
+				throw new IllegalStateException(
+						String.format("The port %1$s is blocked by process %2$s", port, IterableUtils.get(pidList, 0)));
+				//
+			} // if
+				//
+		} // if
+			//
 		final Server server = new Server(intValue(testAndApply(x -> containsKey(map, x), "port",
 				x -> NumberUtils.toInt(toString(get(map, x)), defaultPort), null), defaultPort));
 		//
@@ -83,6 +124,75 @@ public class Main {
 			//
 		} // if
 			//
+	}
+
+	private static <E> void add(final Collection<E> instance, final E value) {
+		if (instance != null) {
+			instance.add(value);
+		}
+	}
+
+	private static <K> Set<K> keySet(final Multimap<K, ?> instance) {
+		return instance != null ? instance.keySet() : null;
+	}
+
+	private static <K, V> Collection<V> get(final Multimap<K, V> instance, final K key) {
+		return instance != null ? instance.get(key) : null;
+	}
+
+	private static Multimap<Integer, Integer> getProcessIdPortMultimap() {
+		//
+		final IPHlpAPI iphlp = Objects.equals("sun.nio.fs.WindowsFileSystem",
+				getName(getClass(FileSystems.getDefault()))) ? IPHlpAPI.INSTANCE : null;
+		//
+		final IntByReference dwSize = new IntByReference(0);
+		//
+		if (iphlp == null || (iphlp.GetExtendedTcpTable(null, dwSize, true, IPHlpAPI.AF_INET,
+				IPHlpAPI.TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL, 0)) != WinError.ERROR_INSUFFICIENT_BUFFER) {
+			//
+			return null;
+			//
+		} // if
+			//
+		final Memory buffer = new Memory(dwSize.getValue());
+		//
+		Multimap<Integer, Integer> map = null;
+		//
+		if (iphlp == null || iphlp.GetExtendedTcpTable(buffer, dwSize, true, IPHlpAPI.AF_INET,
+				IPHlpAPI.TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL, 0) == WinError.NO_ERROR) {
+			//
+			final MIB_TCPTABLE_OWNER_PID table = new MIB_TCPTABLE_OWNER_PID(buffer);
+			//
+			MIB_TCPROW_OWNER_PID row = null;
+			//
+			for (int i = 0; i < table.dwNumEntries; i++) {
+				//
+				if (table.table == null || (row = ArrayUtils.get(table.table, i)) == null) {
+					//
+					continue;
+					//
+				} // if
+					//
+				put(map = ObjectUtils.getIfNull(map = ObjectUtils.getIfNull(map, LinkedListMultimap::create),
+						LinkedListMultimap::create), row.dwOwningPid,
+						Integer.valueOf(((row.dwLocalPort & 0xff00) >> 8) | ((row.dwLocalPort & 0xff) << 8)));
+				//
+			} // for
+				//
+		} // if
+			//
+		return map;
+		//
+	}
+
+	private static Class<?> getClass(final Object instance) {
+		return instance != null ? instance.getClass() : null;
+	}
+
+	private static <K, V> void put(final Multimap<K, V> instance, final K key, final V value) {
+		if (instance != null) {
+			instance.put(key, value);
+		}
 	}
 
 	private static Map<String, String> toMap(final String... ss) {

@@ -21,6 +21,7 @@ import org.apache.bcel.classfile.FieldOrMethod;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.LDC;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Predicates;
+import com.google.common.collect.Multimap;
 import com.google.common.reflect.Reflection;
 
 import io.github.toolfactory.narcissus.Narcissus;
@@ -64,7 +66,7 @@ class MainTest {
 
 	private static class IH implements InvocationHandler {
 
-		private Boolean containsKey, test = null;
+		private Boolean containsKey, test, put, add = null;
 
 		public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
 			//
@@ -88,7 +90,7 @@ class MainTest {
 					//
 				} else if (Objects.equals(name, "put")) {
 					//
-					return containsKey;
+					return put;
 					//
 				} // if
 					//
@@ -105,6 +107,26 @@ class MainTest {
 				if (Objects.equals(name, "test")) {
 					//
 					return test;
+					//
+				} // if
+					//
+			} else if (proxy instanceof Multimap) {
+				//
+				if (Objects.equals(name, "put")) {
+					//
+					return put;
+					//
+				} else if (IterableUtils.contains(Arrays.asList("get", "keySet"), name)) {
+					//
+					return null;
+					//
+				} // if
+					//
+			} else if (proxy instanceof Collection) {
+				//
+				if (Objects.equals(name, "add")) {
+					//
+					return add;
 					//
 				} // if
 					//
@@ -140,7 +162,7 @@ class MainTest {
 		//
 		Object result = null;
 		//
-		String toString = null;
+		String name, toString = null;
 		//
 		for (int i = 0; ms != null && i < ms.length; i++) {
 			//
@@ -181,8 +203,11 @@ class MainTest {
 			//
 			toString = Objects.toString(m);
 			//
-			if (contains(Arrays.asList(Integer.TYPE, Boolean.TYPE), getReturnType(m)) || Boolean.logicalAnd(
-					Objects.equals(getName(m), "getPorts"), Arrays.equals(parameterTypes, new Class<?>[] {}))) {
+			if (contains(Arrays.asList(Integer.TYPE, Boolean.TYPE), getReturnType(m))
+					|| Boolean.logicalAnd(Objects.equals(name = getName(m), "getPorts"),
+							Arrays.equals(parameterTypes, new Class<?>[] {}))
+					|| Boolean.logicalAnd(Objects.equals(name, "getProcessIdPortMultimap"),
+							Arrays.equals(parameterTypes, new Class<?>[] {}))) {
 				//
 				Assertions.assertNotNull(result, toString);
 				//
@@ -224,7 +249,7 @@ class MainTest {
 				//
 			if ((ih = ObjectUtils.getIfNull(ih, IH::new)) != null) {
 				//
-				ih.containsKey = ih.test = Boolean.FALSE;
+				ih.containsKey = ih.test = ih.put = ih.add = Boolean.FALSE;
 				//
 			} // if
 				//
@@ -289,7 +314,11 @@ class MainTest {
 					|| Boolean.logicalAnd(Objects.equals(name, "getPorts"),
 							Arrays.equals(parameterTypes, new Class<?>[] {}))
 					|| Boolean.logicalAnd(Objects.equals(name, "getInstructions"),
-							Arrays.equals(parameterTypes, new Class<?>[] { InstructionList.class }))) {
+							Arrays.equals(parameterTypes, new Class<?>[] { InstructionList.class }))
+					|| Boolean.logicalAnd(Objects.equals(name, "getProcessIdPortMultimap"),
+							Arrays.equals(parameterTypes, new Class<?>[] {}))
+					|| Boolean.logicalAnd(Objects.equals(name, "getClass"),
+							Arrays.equals(parameterTypes, new Class<?>[] { Object.class }))) {
 				//
 				Assertions.assertNotNull(result, toString);
 				//

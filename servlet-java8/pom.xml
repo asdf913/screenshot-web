@@ -55,6 +55,12 @@
 			<artifactId>bcel</artifactId>
 			<version>6.12.0</version>
 		</dependency>
+		<!-- Source: https://mvnrepository.com/artifact/com.google.guava/guava -->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>21.0</version>
+		</dependency>
 		<!-- Source: https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -67,13 +73,6 @@
 			<groupId>io.github.toolfactory</groupId>
 			<artifactId>narcissus</artifactId>
 			<version>1.0.7</version>
-			<scope>test</scope>
-		</dependency>
-		<!-- Source: https://mvnrepository.com/artifact/com.google.guava/guava -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>21.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
