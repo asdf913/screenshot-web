@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.servlet.http.MainServlet;
 
@@ -28,6 +26,7 @@ import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.LDC;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -39,11 +38,7 @@ public class Main {
 
 	public static void main(final String[] args) throws Exception {
 		//
-		final Stream<String> stream = testAndApply(Objects::nonNull, args, Arrays::stream, null);
-		//
-		final Map<String, String> map = collect(
-				map(filter(stream, s -> length(StringUtils.split(s, '=')) == 2), s -> StringUtils.split(s, '=')),
-				Collectors.toMap(a -> ArrayUtils.get(a, 0), a -> ArrayUtils.get(a, 1)));
+		final Map<String, String> map = toMap(args);
 		//
 		final int defaultPort = 8080;
 		//
@@ -88,6 +83,50 @@ public class Main {
 			//
 		} // if
 			//
+	}
+
+	private static Map<String, String> toMap(final String... ss) {
+		//
+		String s = null;
+		//
+		Map<String, String> map = null;
+		//
+		for (int i = 0; i < length(ss); i++) {
+			//
+			if (Objects.equals(s = ArrayUtils.get(ss, i), "=")) {
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), "", "");
+				//
+			} else if (s != null && s.length() == 2 && s.charAt(0) == '=') {
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), "", s.substring(1, s.length()));
+				//
+			} else if (s != null && s.length() == 2 && s.charAt(s.length() - 1) == '=') {
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), s.substring(0, s.length() - 1), "");
+				//
+			} else if (s != null && s.indexOf('=') >= 0 && s.indexOf('=') == s.lastIndexOf('=')) {
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), StringUtils.substringBefore(s, '='),
+						StringUtils.substringAfter(s, '='));
+				//
+			} else if (s != null && s.length() > 2 && s.indexOf('=') != s.lastIndexOf('=')) {
+				//
+				put(map = ObjectUtils.getIfNull(map, LinkedHashMap::new), StringUtils.substring(s, 0, s.indexOf('=')),
+						StringUtils.substring(s, s.indexOf('=') + 1));
+				//
+			} // if
+				//
+		} // for
+			//
+		return map;
+		//
+	}
+
+	private static <K, V> void put(final Map<K, V> instance, final K key, final V value) {
+		if (instance != null) {
+			instance.put(key, value);
+		}
 	}
 
 	private static int[] getPorts() throws IOException, NoSuchMethodException {
@@ -240,18 +279,6 @@ public class Main {
 
 	private static int length(final Object[] instance) {
 		return instance != null ? instance.length : 0;
-	}
-
-	private static <T, R, A> R collect(final Stream<T> instance, final Collector<? super T, A, R> collector) {
-		return instance != null ? instance.collect(collector) : null;
-	}
-
-	private static <T, R> Stream<R> map(final Stream<T> instance, final Function<? super T, ? extends R> mapper) {
-		return instance != null ? instance.map(mapper) : null;
-	}
-
-	private static <T> Stream<T> filter(final Stream<T> instance, final Predicate<? super T> predicate) {
-		return instance != null ? instance.filter(predicate) : instance;
 	}
 
 	private static <T> void forEach(final Iterable<T> instance, final Consumer<T> consumer) {

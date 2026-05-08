@@ -9,11 +9,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import org.apache.bcel.classfile.Field;
 import org.apache.bcel.classfile.FieldOrMethod;
@@ -35,8 +36,8 @@ import io.github.toolfactory.narcissus.Narcissus;
 
 class MainTest {
 
-	private static Method METHOD_FOR_NAME, METHOD_CONAINS_KEY, METHOD_TEST_AND_APPLY, METHOD_GET_VALUE,
-			METHOD_CAST = null;
+	private static Method METHOD_FOR_NAME, METHOD_CONAINS_KEY, METHOD_TEST_AND_APPLY, METHOD_GET_VALUE, METHOD_CAST,
+			METHOD_TO_MAP = null;
 
 	@BeforeAll
 	static void beforeAll() throws NoSuchMethodException {
@@ -53,6 +54,8 @@ class MainTest {
 		(METHOD_GET_VALUE = clz.getDeclaredMethod("getValue", LDC.class, ConstantPoolGen.class)).setAccessible(true);
 		//
 		(METHOD_CAST = clz.getDeclaredMethod("cast", Class.class, Object.class)).setAccessible(true);
+		//
+		(METHOD_TO_MAP = clz.getDeclaredMethod("toMap", String[].class)).setAccessible(true);
 		//
 	}
 
@@ -80,6 +83,10 @@ class MainTest {
 					//
 					return containsKey;
 					//
+				} else if (Objects.equals(name, "put")) {
+					//
+					return containsKey;
+					//
 				} // if
 					//
 			} else if (proxy instanceof Function) {
@@ -95,14 +102,6 @@ class MainTest {
 				if (Objects.equals(name, "test")) {
 					//
 					return test;
-					//
-				} // if
-					//
-			} else if (proxy instanceof Stream) {
-				//
-				if (contains(Arrays.asList("collect", "filter", "map"), name)) {
-					//
-					return null;
 					//
 				} // if
 					//
@@ -407,6 +406,69 @@ class MainTest {
 			} // if
 				//
 		} // if
+			//
+	}
+
+	@Test
+	void testToMap() throws Throwable {
+		//
+		Assertions.assertEquals(Collections.singletonMap("", ""), toMap("="));
+		//
+		Assertions.assertEquals(Collections.singletonMap(" ", ""), toMap(" ="));
+		//
+		Assertions.assertEquals(Collections.singletonMap("", " "), toMap("= "));
+		//
+		Assertions.assertEquals(Collections.singletonMap("", "= "), toMap("== "));
+		//
+		Assertions.assertEquals(Collections.singletonMap(" ", "="), toMap(" =="));
+		//
+	}
+
+	private static Map<String, String> toMap(final String... ss) throws Throwable {
+		try {
+			//
+			final Object obj = invoke(METHOD_TO_MAP, null, (Object) ss);
+			//
+			if (obj == null) {
+				//
+				return null;
+				//
+			} else if (obj instanceof Map) {
+				//
+				final Map<?, ?> temp = (Map<?, ?>) obj;
+				//
+				Map<String, String> map = null;
+				//
+				if (temp != null && temp.entrySet() != null && temp.entrySet().iterator() != null) {
+					//
+					for (final Entry<?, ?> entry : temp.entrySet()) {
+						//
+						if (entry == null) {
+							//
+							continue;
+							//
+						} // if
+							//
+						if ((map = ObjectUtils.getIfNull(map, LinkedHashMap::new)) != null) {
+							//
+							map.put(Objects.toString(entry.getKey()), Objects.toString(entry.getValue()));
+						} // if
+							//
+					} // for
+						//
+				} // if
+					//
+				return map;
+				//
+			} // if
+				//
+			throw new Throwable(Objects.toString(obj.getClass()));
+			//
+		} catch (final InvocationTargetException e) {
+			//
+			throw e.getTargetException();
+			//
+		} // try
 			//
 	}
 
